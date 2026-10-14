@@ -145,7 +145,7 @@ Invalid predictions count as wrong in all accuracy rates. Structures that InChI 
 
 The repo is designed so that anyone with the link can run it:
 
-- **One-time setup by the owner:** after creating the GitHub repo, run `python scripts/set_github_user.py <your-username>` and commit. This points the Colab badge and the notebook's clone URL at your repo. Keep the repository public (or add collaborators).
+- **One-time setup by the owner:** after creating the GitHub repo, run `python scripts/set_github_user.py imabhi29` and commit. This points the Colab badge and the notebook's clone URL at your repo. Keep the repository public (or add collaborators).
 - **No local files required:** data downloads from public sources, model weights download from Hugging Face, and all paths are relative to the repo.
 - **No credentials:** PubChem and ChEMBL need no API keys; Google Drive is used only if the user turns on `SAVE_TO_DRIVE`.
 - **Every push is tested:** GitHub Actions runs the unit tests on each commit (see the tests badge).
