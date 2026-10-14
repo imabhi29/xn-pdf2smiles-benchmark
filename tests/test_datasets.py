@@ -45,3 +45,17 @@ def test_helpful_error_when_columns_unknown(image_dir):
     (image_dir / "labels.csv").write_text("a,b\nimg_1.png,CCO\n")
     with pytest.raises(ValueError, match="labels_file"):
         datasets.load_image_dataset(_cfg(image_dir), seed=0)
+
+
+def test_combined_key_when_names_repeat_across_folders(tmp_path):
+    """BioVista-style labels: images live in per-paper folders as 0.png, 1.png ..."""
+    for pdf in ["6r8r", "1abc"]:
+        (tmp_path / pdf).mkdir()
+        for i in range(2):
+            Image.new("RGB", (10, 10), "white").save(tmp_path / pdf / f"{i}.png")
+    (tmp_path / "gd_SMIELS.csv").write_text(
+        ",pdf_name,index,molminer_id,smiles\n"
+        "0,6r8r,0,m1,CCO\n1,6r8r,1,m2,CCN\n2,1abc,0,m3,CCC\n3,1abc,1,m4,CCCC\n")
+    df = datasets.load_image_dataset(_cfg(tmp_path), seed=0)
+    pairs = {(row.sample_id, row.true_smiles) for row in df.itertuples()}
+    assert pairs == {("6r8r/0", "CCO"), ("6r8r/1", "CCN"), ("1abc/0", "CCC"), ("1abc/1", "CCCC")}

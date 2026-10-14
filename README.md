@@ -37,6 +37,7 @@ xn-pdf2smiles-benchmark/
 │   └── run_benchmark_colab.ipynb  # one-click Colab run: install → test → download → run → results
 ├── scripts/
 │   ├── download_data.py       # downloads BioVista OCSR data and example PDFs
+│   ├── inspect_dataset.py     # prints the downloaded data layout and label columns
 │   ├── setup_colab.sh         # builds the Python 3.10 environment (Colab or any Linux VM)
 │   └── set_github_user.py     # fills your username into the Colab badge and clone URL
 ├── xnbench/                   # the benchmark package

@@ -75,19 +75,93 @@ def _pick_column(df: pd.DataFrame, wanted: str | None, candidates: list[str]) ->
 # --------------------------------------------------------------------------- #
 # Image benchmark
 # --------------------------------------------------------------------------- #
+def _norm(value) -> str:
+    """Normalise a label value for matching: 3.0 -> '3', strip spaces/extensions."""
+    text = str(value).strip()
+    if text.endswith(".0") and text[:-2].lstrip("-").isdigit():
+        text = text[:-2]
+    return text
+
+
+def _build_image_index(root: Path, images: list[Path]) -> dict[str, Path]:
+    """Map every way an image might be referred to (name, stem, relative path
+    with or without extension) to its path."""
+    index: dict[str, Path] = {}
+    ambiguous: set[str] = set()
+    for img in images:
+        rel = img.relative_to(root).as_posix()
+        rel_no_ext = rel[: -len(img.suffix)]
+        for key in {img.name, img.stem, rel, rel_no_ext,
+                    # also match the last two path parts, e.g. "6r8r/3"
+                    "/".join(Path(rel_no_ext).parts[-2:])}:
+            if key in index and index[key] != img:
+                ambiguous.add(key)      # e.g. "0.png" exists in several folders
+            index.setdefault(key, img)
+    # Never match on a key that points to more than one image
+    for key in ambiguous:
+        del index[key]
+    return index
+
+
+def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None):
+    """Candidate ways to turn a label row into an image key.
+
+    Yields (description, function(row) -> key). Single columns come first,
+    then pairs of columns joined with common separators (e.g. pdf_name/index).
+    """
+    if wanted:
+        yield wanted, lambda r, c=wanted: _norm(r[c])
+        return
+    cols = [c for c in df.columns if c != smiles_col and not str(c).startswith("Unnamed")]
+    preferred = [c for c in cols if str(c).lower() in IMAGE_CANDIDATES]
+    for c in preferred + [c for c in cols if c not in preferred]:
+        yield c, lambda r, c=c: _norm(r[c])
+    for a in cols:
+        for b in cols:
+            if a == b:
+                continue
+            for sep in ("/", "_", "-", ""):
+                yield f"{a}{sep}{b}", lambda r, a=a, b=b, sep=sep: f"{_norm(r[a])}{sep}{_norm(r[b])}"
+
+
+def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
+              index: dict[str, Path], probe: int = 300):
+    """Pick the key builder that matches the most images on a sample of rows."""
+    sample = df.head(probe)
+    best = (None, None, 0.0)
+    for desc, build in _key_builders(df, smiles_col, wanted):
+        try:
+            matched = [index[k] for k in (build(row) for _, row in sample.iterrows()) if k in index]
+        except Exception:
+            continue
+        # Each label row must point to a different image, otherwise labels would be mixed up
+        if len(set(matched)) < len(matched):
+            continue
+        rate = len(matched) / max(len(sample), 1)
+        if rate > best[2]:
+            best = (desc, build, rate)
+        if rate >= 0.99:
+            break
+    return best
+
+
 def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame:
-    """Return a DataFrame with columns sample_id, image_path, true_smiles."""
+    """Return a DataFrame with columns sample_id, image_path, true_smiles.
+
+    The label file and the column(s) identifying each image are detected
+    automatically by testing which choice matches the most image files.
+    Set labels_file / image_col / smiles_col in the config to override.
+    """
     root = resolve_path(cfg.root)
     if not root.exists():
         raise FileNotFoundError(
             f"{root} not found. Run: python scripts/download_data.py --what biovista")
 
-    # Index every image once so labels can be matched by path, name or stem.
     images = [p for p in root.rglob("*") if p.suffix.lower() in IMAGE_EXTS]
-    by_name = {p.name: p for p in images}
-    by_stem = {p.stem: p for p in images}
     if not images:
         raise FileNotFoundError(f"No images found under {root}")
+    index = _build_image_index(root, images)
+    examples = ", ".join(sorted(p.relative_to(root).as_posix() for p in images)[:5])
 
     candidates = ([resolve_path(cfg.labels_file)] if cfg.labels_file else
                   sorted(p for p in root.rglob("*") if p.suffix.lower() in LABEL_EXTS))
@@ -98,34 +172,29 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
         except Exception as exc:  # unreadable or wrong format: try the next file
             tried.append(f"{label_path.name} (unreadable: {exc})")
             continue
-        img_col = _pick_column(df, cfg.image_col, IMAGE_CANDIDATES)
         smi_col = _pick_column(df, cfg.smiles_col, SMILES_CANDIDATES)
-        if not img_col or not smi_col:
-            tried.append(f"{label_path.name} (columns: {list(df.columns)[:8]})")
+        if not smi_col:
+            tried.append(f"{label_path.name} (no SMILES column; columns: {list(df.columns)[:8]})")
+            continue
+        desc, build, rate = _best_key(df, smi_col, cfg.image_col, index)
+        if build is None or rate < 0.5:
+            tried.append(f"{label_path.name} (columns {list(df.columns)[:8]}; best image match "
+                         f"'{desc}' only {rate:.0%})")
             continue
 
-        def locate(value) -> Path | None:
-            value = str(value)
-            for base in (label_path.parent, root):
-                if (base / value).is_file():
-                    return base / value
-            return by_name.get(Path(value).name) or by_stem.get(Path(value).stem)
-
+        keys = [build(row) for _, row in df.iterrows()]
         out = pd.DataFrame({
-            "sample_id": df[img_col].astype(str),
-            "image_path": df[img_col].map(locate),
+            "sample_id": keys,
+            "image_path": [index.get(k) for k in keys],
             "true_smiles": df[smi_col].astype(str).str.strip(),
         })
-        missing = out["image_path"].isna().sum()
+        missing = int(out["image_path"].isna().sum())
         out = out.dropna(subset=["image_path"])
         out = out[out["true_smiles"].ne("") & out["true_smiles"].ne("nan")]
-        if out.empty:
-            tried.append(f"{label_path.name} (no rows matched an image)")
-            continue
         if missing:
             log.warning("%d labels had no matching image and were skipped", missing)
-        log.info("Labels: %s  (image col '%s', SMILES col '%s', %d usable rows)",
-                 label_path.name, img_col, smi_col, len(out))
+        log.info("Labels: %s | image key: '%s' (%.0f%% matched) | SMILES column: '%s' | %d usable rows",
+                 label_path.name, desc, rate * 100, smi_col, len(out))
 
         n = limit or cfg.sample_size
         if n and n < len(out):
@@ -134,8 +203,10 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
         return out.reset_index(drop=True)
 
     raise ValueError(
-        "Could not find a usable label file. Set datasets.images.labels_file, "
-        "image_col and smiles_col in the config. Files tried:\n  " + "\n  ".join(tried))
+        "Could not match the label file to the images. Example image files: "
+        f"{examples}\nFiles tried:\n  " + "\n  ".join(tried) +
+        "\nRun `python scripts/inspect_dataset.py` and set datasets.images.labels_file, "
+        "image_col and smiles_col in configs/default.yaml.")
 
 
 # --------------------------------------------------------------------------- #
