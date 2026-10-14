@@ -30,14 +30,14 @@ The code measures how accurately chemical structures can be extracted from scien
 ```
 xn-pdf2smiles-benchmark/
 ├── README.md                  # this file
-├── requirements.txt           # pip dependencies (Colab and local, Python 3.10–3.12)
+├── requirements.txt           # pip dependencies (Python 3.10)
 ├── environment.yml            # conda environment wrapping requirements.txt
 ├── configs/default.yaml       # every setting: paths, sample size, seed, APIs, thresholds
 ├── notebooks/
 │   └── run_benchmark_colab.ipynb  # one-click Colab run: install → test → download → run → results
 ├── scripts/
 │   ├── download_data.py       # downloads BioVista OCSR data and example PDFs
-│   ├── setup_colab.sh         # one-time dependency install (Colab or any Linux VM)
+│   ├── setup_colab.sh         # builds the Python 3.10 environment (Colab or any Linux VM)
 │   └── set_github_user.py     # fills your username into the Colab badge and clone URL
 ├── xnbench/                   # the benchmark package
 │   ├── run.py                 #   entry point: orchestrates the whole pipeline
@@ -57,14 +57,15 @@ xn-pdf2smiles-benchmark/
 
 1. Click the **Open in Colab** badge at the top of this page.
 2. Optional: *Runtime → Change runtime type → T4 GPU* for faster inference.
-3. *Runtime → Run all*. The install step restarts the runtime once because MolScribe needs `numpy<2`.
-4. When Colab reconnects, choose *Runtime → Run all* again. The install is skipped and the benchmark runs through to charts, an error gallery, and a downloadable zip of results.
+3. *Runtime → Run all*. The first run takes about 5–8 minutes to build the environment, then continues through to charts, an error gallery, and a downloadable zip of results.
+
+MolScribe's dependencies only install on Python 3.10, while Colab ships a newer Python. The notebook therefore builds a private Python 3.10 environment (`.venv`, via `uv`) and runs every benchmark command with it, so the setup does not break when Colab upgrades.
 
 Settings (mode, number of images, PubChem on/off, save to Google Drive) are in the notebook's first cell. Nothing needs to be uploaded: the notebook clones this repo and downloads the public data itself.
 
 ## Local setup
 
-Works on Ubuntu, macOS, or Windows via WSL2 with Python 3.10–3.12. A GPU is optional.
+Use **Python 3.10** (MolScribe's dependencies do not install on newer versions). Ubuntu, macOS, or Windows via WSL2; a GPU is optional. Colab is the tested route; native Windows is untested.
 
 ```bash
 git clone <this-repo-url>
@@ -145,7 +146,7 @@ Invalid predictions count as wrong in all accuracy rates. Structures that InChI 
 
 The repo is designed so that anyone with the link can run it:
 
-- **One-time setup by the owner:** after creating the GitHub repo, run `python scripts/set_github_user.py imabhi29` and commit. This points the Colab badge and the notebook's clone URL at your repo. Keep the repository public (or add collaborators).
+- **One-time setup by the owner:** after creating the GitHub repo, run `python scripts/set_github_user.py <your-username>` and commit. This points the Colab badge and the notebook's clone URL at your repo. Keep the repository public (or add collaborators).
 - **No local files required:** data downloads from public sources, model weights download from Hugging Face, and all paths are relative to the repo.
 - **No credentials:** PubChem and ChEMBL need no API keys; Google Drive is used only if the user turns on `SAVE_TO_DRIVE`.
 - **Every push is tested:** GitHub Actions runs the unit tests on each commit (see the tests badge).

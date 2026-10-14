@@ -7,6 +7,8 @@ data/ground_truth/*
 results/*
 !results/.gitkeep
 
+.venv/
+
 # Model weights
 *.pt
 *.pth
@@ -19,4 +21,4 @@ __pycache__/
 .venv/
 *.egg-info/
 .ipynb_checkpoints/
-.colab_setup_done
+

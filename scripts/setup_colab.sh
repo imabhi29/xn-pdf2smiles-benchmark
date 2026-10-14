@@ -1,24 +1,40 @@
 #!/usr/bin/env bash
-# One-time dependency install for Google Colab (also fine on any Linux VM).
-# Safe to re-run: a marker file skips the install once it has succeeded.
+# One-time setup for Google Colab (works on any Linux machine).
+#
+# Colab's system Python changes over time and is too new for MolScribe's
+# pinned dependencies (numpy<2, OpenNMT-py/pyonmttok). So we create a private
+# Python 3.10 environment in .venv with `uv` and run the benchmark there.
+# The notebook kernel itself only needs pandas/matplotlib/rdkit for plots.
+#
+# Safe to re-run: skips everything once setup has succeeded.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-MARKER=".colab_setup_done"
+PY=".venv/bin/python"
+MARKER=".venv/.setup_done"
 if [[ -f "$MARKER" ]]; then
-  echo "Dependencies already installed (delete $MARKER to force a reinstall)."
+  echo "Environment already set up (.venv). Delete .venv to rebuild."
   exit 0
 fi
 
-echo "Installing dependencies (about 3-5 minutes on Colab)..."
-python -m pip install -q --upgrade pip
-python -m pip install -q -r requirements.txt
+echo "[1/4] Installing uv ..."
+python -m pip install -q uv
 
-python - << 'PY'
-import importlib
-for mod in ["fitz", "rdkit", "decimer_segmentation", "molscribe", "torch", "pandas", "yaml"]:
-    importlib.import_module(mod)
-    print(f"  ok  {mod}")
+echo "[2/4] Creating Python 3.10 environment in .venv ..."
+uv venv .venv --python 3.10 --seed -q
+
+echo "[3/4] Installing benchmark dependencies (about 5-8 minutes) ..."
+uv pip install --python "$PY" -r requirements.txt
+
+echo "[4/4] Checking imports ..."
+"$PY" - << 'PY'
+import importlib, sys
+print("  python", sys.version.split()[0])
+for mod in ["fitz", "numpy", "pandas", "rdkit", "torch", "decimer_segmentation", "molscribe"]:
+    m = importlib.import_module(mod)
+    print(f"  ok  {mod} {getattr(m, '__version__', '')}")
+from molscribe import MolScribe  # noqa: F401  (fails early if MolScribe is broken)
 PY
+
 touch "$MARKER"
 echo "Setup complete."
