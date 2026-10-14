@@ -80,6 +80,8 @@ def _norm(value) -> str:
     text = str(value).strip()
     if text.endswith(".0") and text[:-2].lstrip("-").isdigit():
         text = text[:-2]
+    if text.lower().endswith(".pdf"):
+        text = text[:-4]
     return text
 
 
@@ -103,15 +105,27 @@ def _build_image_index(root: Path, images: list[Path]) -> dict[str, Path]:
     return index
 
 
-def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None):
+def _from_template(template: str):
+    """Build an image key by filling a template such as
+    "{pdf_name}_image_molminer_bbox_{index}-{molminer_id}" from a label row."""
+    def build(row):
+        return template.format_map({str(k): _norm(v) for k, v in row.items()})
+    return build
+
+
+def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None,
+                  templates: list[str] | None = None):
     """Candidate ways to turn a label row into an image key.
 
-    Yields (description, function(row) -> key). Single columns come first,
-    then pairs of columns joined with common separators (e.g. pdf_name/index).
+    Yields (description, function(row) -> key): file-name templates from the
+    config first, then single columns, then pairs of columns joined with
+    common separators (e.g. pdf_name/index).
     """
     if wanted:
         yield wanted, lambda r, c=wanted: _norm(r[c])
         return
+    for template in templates or []:
+        yield template, _from_template(template)
     cols = [c for c in df.columns if c != smiles_col and not str(c).startswith("Unnamed")]
     preferred = [c for c in cols if str(c).lower() in IMAGE_CANDIDATES]
     for c in preferred + [c for c in cols if c not in preferred]:
@@ -125,11 +139,11 @@ def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None):
 
 
 def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
-              index: dict[str, Path], probe: int = 300):
+              index: dict[str, Path], templates: list[str] | None = None, probe: int = 300):
     """Pick the key builder that matches the most images on a sample of rows."""
     sample = df.head(probe)
     best = (None, None, 0.0)
-    for desc, build in _key_builders(df, smiles_col, wanted):
+    for desc, build in _key_builders(df, smiles_col, wanted, templates):
         try:
             matched = [index[k] for k in (build(row) for _, row in sample.iterrows()) if k in index]
         except Exception:
@@ -176,10 +190,12 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
         if not smi_col:
             tried.append(f"{label_path.name} (no SMILES column; columns: {list(df.columns)[:8]})")
             continue
-        desc, build, rate = _best_key(df, smi_col, cfg.image_col, index)
+        desc, build, rate = _best_key(df, smi_col, cfg.image_col, index,
+                                      cfg.get("image_key_templates"))
         if build is None or rate < 0.5:
             tried.append(f"{label_path.name} (columns {list(df.columns)[:8]}; best image match "
-                         f"'{desc}' only {rate:.0%})")
+                         f"'{desc}' only {rate:.0%})\n    first rows:\n"
+                         + df.head(3).to_string(max_colwidth=40).replace("\n", "\n    "))
             continue
 
         keys = [build(row) for _, row in df.iterrows()]
@@ -203,7 +219,8 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
         return out.reset_index(drop=True)
 
     raise ValueError(
-        "Could not match the label file to the images. Example image files: "
+        "Could not match the label file to the images. Add a matching pattern to "
+        "datasets.images.image_key_templates in configs/default.yaml.\nExample image files: "
         f"{examples}\nFiles tried:\n  " + "\n  ".join(tried) +
         "\nRun `python scripts/inspect_dataset.py` and set datasets.images.labels_file, "
         "image_col and smiles_col in configs/default.yaml.")

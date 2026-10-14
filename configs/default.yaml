@@ -18,6 +18,16 @@ datasets:
     labels_file: null   # null -> auto-detect the CSV/JSON label file under root
     image_col: null     # null -> auto-detect (image, file_name, path, ...)
     smiles_col: null    # null -> auto-detect (smiles, SMILES, label, ...)
+    # File-name patterns tried when matching label rows to images. Fields in
+    # {braces} are label-file columns; the best-matching pattern is used.
+    # BioVista images look like: 100_6qm7_image_molminer_bbox_2-0.png
+    image_key_templates:
+      - "{pdf_name}_image_molminer_bbox_{index}-{molminer_id}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id}-{index}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id}"
+      - "{pdf_name}_image_molminer_bbox_{index}"
+      - "{pdf_name}_{molminer_id}"
+      - "{pdf_name}_{index}"
     sample_size: 500    # null -> use every image (GPU recommended)
 
   # Full PDF pipeline: folder of PDFs + optional ground-truth CSV
