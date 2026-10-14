@@ -26,6 +26,7 @@ IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".gif", ".webp"}
 LABEL_EXTS = {".csv", ".tsv", ".json", ".jsonl", ".txt"}
 SMILES_CANDIDATES = ["smiles", "gt_smiles", "label_smiles", "canonical_smiles",
                      "target", "label", "smi"]
+MIN_MATCH_RATE = 0.3   # share of sampled label rows that must find their image
 IMAGE_CANDIDATES = ["image", "image_path", "img_path", "file_path", "file_name",
                     "filename", "file", "img", "path", "image_id", "id", "name"]
 
@@ -184,7 +185,7 @@ def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
         if len(set(matched)) < len(matched):
             continue
         rate = len(matched) / max(len(sample), 1)
-        if rate >= 0.5:
+        if rate >= MIN_MATCH_RATE:
             strong.append(f"{desc} ({rate:.0%})")
         if rate > best[2]:          # ties keep the earlier (more likely) pattern
             best = (desc, build, rate)
@@ -228,7 +229,7 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
             continue
         desc, build, rate = _best_key(df, smi_col, cfg.image_col, index,
                                       cfg.get("image_key_templates"))
-        if build is None or rate < 0.5:
+        if build is None or rate < MIN_MATCH_RATE:
             tried.append(f"{label_path.name} (columns {list(df.columns)[:8]}; best image match "
                          f"'{desc}' only {rate:.0%})\n    first rows:\n"
                          + df.head(3).to_string(max_colwidth=40).replace("\n", "\n    "))

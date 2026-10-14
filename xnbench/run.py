@@ -23,7 +23,7 @@ import pandas as pd
 import yaml
 from PIL import Image
 
-from . import datasets, evaluate
+from . import __version__, datasets, evaluate
 from .config import REPO_ROOT, load_config, pick_device, resolve_path
 
 log = logging.getLogger("xnbench")
@@ -69,8 +69,13 @@ def write_run_info(run_dir: Path, cfg, args):
                                               encoding="utf-8")
 
 
+def _to_builtin(value):
+    """Make numpy scalars JSON-friendly (so metrics stay numbers, not strings)."""
+    return value.item() if hasattr(value, "item") else str(value)
+
+
 def save_json(obj: dict, path: Path):
-    path.write_text(json.dumps(obj, indent=2, default=str), encoding="utf-8")
+    path.write_text(json.dumps(obj, indent=2, default=_to_builtin), encoding="utf-8")
 
 
 def build_verifier(cfg, enabled: bool):
@@ -241,7 +246,7 @@ def main(argv=None):
     run_dir = make_run_dir(cfg, mode, args.run_name, args.output_dir)
     setup_logging(run_dir)
     write_run_info(run_dir, cfg, args)
-    log.info("Run folder: %s", run_dir)
+    log.info("xnbench %s | run folder: %s", __version__, run_dir)
 
     (run_images if mode == "images" else run_pdfs)(cfg, args, run_dir)
     log.info("Done. Results in %s", run_dir)
