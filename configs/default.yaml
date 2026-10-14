@@ -20,8 +20,16 @@ datasets:
     smiles_col: null    # null -> auto-detect (smiles, SMILES, label, ...)
     # File-name patterns tried when matching label rows to images. Fields in
     # {braces} are label-file columns; the best-matching pattern is used.
-    # BioVista images look like: 100_6qm7_image_molminer_bbox_2-0.png
+    # BioVista: images look like 100_6qm7_image_molminer_bbox_2-0.png and the
+    # label column molminer_id looks like P3-1 (page-box). For such IDs,
+    # {molminer_id_nop} = "3-1", {..._page0}/{..._box0} count from 0.
     image_key_templates:
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_nop}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{molminer_id_box0}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_page}-{molminer_id_box0}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{molminer_id_box}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_page}-{index}"
+      - "{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{index}"
       - "{pdf_name}_image_molminer_bbox_{index}-{molminer_id}"
       - "{pdf_name}_image_molminer_bbox_{molminer_id}-{index}"
       - "{pdf_name}_image_molminer_bbox_{molminer_id}"

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -105,11 +106,33 @@ def _build_image_index(root: Path, images: list[Path]) -> dict[str, Path]:
     return index
 
 
+_PAGE_BOX = re.compile(r"^[A-Za-z]*(\d+)-(\d+)$")
+
+
+def _template_fields(row) -> dict[str, str]:
+    """Row values as template fields, plus derived fields for page-box IDs.
+
+    A value like "P3-1" (page 3, box 1) in column c also provides:
+      {c_nop}   -> "3-1"   (prefix letters removed)
+      {c_page}  -> "3",  {c_box}  -> "1"
+      {c_page0} -> "2",  {c_box0} -> "0"   (counted from 0 instead of 1)
+    """
+    fields = {str(k): _norm(v) for k, v in row.items()}
+    for key, value in list(fields.items()):
+        m = _PAGE_BOX.match(value)
+        if m:
+            page, box = int(m.group(1)), int(m.group(2))
+            fields.update({f"{key}_nop": f"{page}-{box}", f"{key}_page": str(page),
+                           f"{key}_box": str(box), f"{key}_page0": str(page - 1),
+                           f"{key}_box0": str(box - 1)})
+    return fields
+
+
 def _from_template(template: str):
     """Build an image key by filling a template such as
-    "{pdf_name}_image_molminer_bbox_{index}-{molminer_id}" from a label row."""
+    "{pdf_name}_image_molminer_bbox_{molminer_id_nop}" from a label row."""
     def build(row):
-        return template.format_map({str(k): _norm(v) for k, v in row.items()})
+        return template.format_map(_template_fields(row))
     return build
 
 
@@ -141,8 +164,8 @@ def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None,
 def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
               index: dict[str, Path], templates: list[str] | None = None, probe: int = 300):
     """Pick the key builder that matches the most images on a sample of rows."""
-    sample = df.head(probe)
-    best = (None, None, 0.0)
+    sample = df.sample(n=min(probe, len(df)), random_state=0)
+    best, strong = (None, None, 0.0), []
     for desc, build in _key_builders(df, smiles_col, wanted, templates):
         try:
             matched = [index[k] for k in (build(row) for _, row in sample.iterrows()) if k in index]
@@ -152,10 +175,14 @@ def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
         if len(set(matched)) < len(matched):
             continue
         rate = len(matched) / max(len(sample), 1)
-        if rate > best[2]:
+        if rate >= 0.5:
+            strong.append(f"{desc} ({rate:.0%})")
+        if rate > best[2]:          # ties keep the earlier (more likely) pattern
             best = (desc, build, rate)
-        if rate >= 0.99:
-            break
+    if len(strong) > 1:
+        log.warning("Several image-name patterns match: %s. Using '%s'. "
+                    "Check the label/image sanity cell before trusting results.",
+                    "; ".join(strong), best[0])
     return best
 
 
