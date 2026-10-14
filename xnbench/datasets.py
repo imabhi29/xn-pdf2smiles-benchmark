@@ -136,6 +136,16 @@ def _from_template(template: str):
     return build
 
 
+def _safe(build):
+    """Wrap a key builder so a row it cannot handle gives None instead of crashing."""
+    def wrapped(row):
+        try:
+            return build(row)
+        except (KeyError, ValueError, TypeError, IndexError):
+            return None
+    return wrapped
+
+
 def _key_builders(df: pd.DataFrame, smiles_col: str, wanted: str | None,
                   templates: list[str] | None = None):
     """Candidate ways to turn a label row into an image key.
@@ -167,10 +177,9 @@ def _best_key(df: pd.DataFrame, smiles_col: str, wanted: str | None,
     sample = df.sample(n=min(probe, len(df)), random_state=0)
     best, strong = (None, None, 0.0), []
     for desc, build in _key_builders(df, smiles_col, wanted, templates):
-        try:
-            matched = [index[k] for k in (build(row) for _, row in sample.iterrows()) if k in index]
-        except Exception:
-            continue
+        build = _safe(build)
+        keys = [build(row) for _, row in sample.iterrows()]
+        matched = [index[k] for k in keys if k is not None and k in index]
         # Each label row must point to a different image, otherwise labels would be mixed up
         if len(set(matched)) < len(matched):
             continue
@@ -225,10 +234,10 @@ def load_image_dataset(cfg, seed: int, limit: int | None = None) -> pd.DataFrame
                          + df.head(3).to_string(max_colwidth=40).replace("\n", "\n    "))
             continue
 
-        keys = [build(row) for _, row in df.iterrows()]
+        keys = [build(row) for _, row in df.iterrows()]   # build is already _safe-wrapped
         out = pd.DataFrame({
             "sample_id": keys,
-            "image_path": [index.get(k) for k in keys],
+            "image_path": [index.get(k) if k is not None else None for k in keys],
             "true_smiles": df[smi_col].astype(str).str.strip(),
         })
         missing = int(out["image_path"].isna().sum())
