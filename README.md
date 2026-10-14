@@ -1,7 +1,7 @@
 # XN Benchmark: PDF / Image → SMILES Extraction
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/YOUR_USERNAME/xn-pdf2smiles-benchmark/blob/main/notebooks/run_benchmark_colab.ipynb)
-[![tests](https://github.com/YOUR_USERNAME/xn-pdf2smiles-benchmark/actions/workflows/tests.yml/badge.svg)](https://github.com/YOUR_USERNAME/xn-pdf2smiles-benchmark/actions/workflows/tests.yml)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/imabhi29/xn-pdf2smiles-benchmark/blob/main/notebooks/run_benchmark_colab.ipynb)
+[![tests](https://github.com/imabhi29/xn-pdf2smiles-benchmark/actions/workflows/tests.yml/badge.svg)](https://github.com/imabhi29/xn-pdf2smiles-benchmark/actions/workflows/tests.yml)
 
 Reproducible benchmarking code for **XN Project Assignment 1.2** (Phase 1: Benchmarking & Project Setup).
 Author: Abhishek Satish Singh
