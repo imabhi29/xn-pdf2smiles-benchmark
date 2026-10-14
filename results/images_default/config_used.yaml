@@ -1,0 +1,52 @@
+run_name: null
+mode: images
+seed: 42
+device: auto
+output_dir: results
+datasets:
+  images:
+    root: data/biovista_ocsr
+    labels_file: null
+    image_col: null
+    smiles_col: null
+    image_key_templates:
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_nop}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{molminer_id_box0}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_page}-{molminer_id_box0}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{molminer_id_box}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_page}-{index}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id_page0}-{index}'
+    - '{pdf_name}_image_molminer_bbox_{index}-{molminer_id}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id}-{index}'
+    - '{pdf_name}_image_molminer_bbox_{molminer_id}'
+    - '{pdf_name}_image_molminer_bbox_{index}'
+    - '{pdf_name}_{molminer_id}'
+    - '{pdf_name}_{index}'
+    sample_size: 500
+  pdfs:
+    root: data/pdfs
+    truth_csv: data/ground_truth/pdf_truth.csv
+pdf:
+  dpi: 400
+  min_crop_px: 60
+  crop_padding: 20
+  label_max_gap_pt: 40
+recognition:
+  hf_repo: yujieq/MolScribe
+  checkpoint: swin_base_char_aux_1m.pth
+verification:
+  sources:
+  - pubchem
+  check_labels: true
+  timeout_s: 15
+  sleep_s: 0.25
+  cache_file: results/cache/api_cache.json
+evaluation:
+  fingerprint_radius: 2
+  fingerprint_bits: 2048
+  near_miss_threshold: 0.85
+downloads:
+  biovista_ocsr_gdrive_id: 11iCH0j7U9iFgwXahjkWZouNyqATfEPoL
+  pdf_urls:
+  - https://raw.githubusercontent.com/jiaxianyan/BioMiner/main/example/pdfs/68_6r8r.pdf
+  - https://raw.githubusercontent.com/jiaxianyan/BioMiner/main/example/pdfs/40_6s8a.pdf

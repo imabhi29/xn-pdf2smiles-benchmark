@@ -1,0 +1,18 @@
+{
+  "started": "2026-10-14T09:16:07",
+  "command": "/content/xn-pdf2smiles-benchmark/xnbench/run.py --mode images --run-name images_default --output-dir /content/xn-pdf2smiles-benchmark/results",
+  "git_commit": "2d43a6f3661a09c766b7b5974fbe1c1a1e44c34f",
+  "python": "3.10.22",
+  "platform": "Linux-6.6.122+-x86_64-with-glibc2.39",
+  "packages": {
+    "rdkit": "2026.9.1",
+    "pandas": "2.3.3",
+    "numpy": "1.26.4",
+    "PyMuPDF": "1.28.2",
+    "decimer-segmentation": "1.5.0",
+    "MolScribe": "1.1.1",
+    "torch": "2.3.1",
+    "tensorflow": "2.15.1",
+    "requests": "2.34.2"
+  }
+}

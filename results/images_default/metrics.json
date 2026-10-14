@@ -1,0 +1,22 @@
+{
+  "mode": "images",
+  "tool": "MolScribe",
+  "category": "all",
+  "n": 500,
+  "validity_rate": 0.946,
+  "exact_match_rate": 0.452,
+  "connectivity_match_rate": 0.486,
+  "stereo_only_error_rate": 0.034,
+  "mean_tanimoto": 0.748,
+  "mean_tanimoto_valid_only": 0.7907,
+  "median_tanimoto_valid_only": 1.0,
+  "near_miss_rate": 0.09,
+  "mean_seconds_per_image": 0.642,
+  "mean_confidence_correct": 0.8728,
+  "mean_confidence_incorrect": 0.7306,
+  "n_images_total": 500,
+  "n_ground_truth_unparseable": 0,
+  "near_miss_threshold": 0.85,
+  "pubchem_found_rate": 0.7468,
+  "pubchem_found_n_checked": 395
+}

@@ -135,6 +135,30 @@ Each run creates `results/<run-name>/`:
 
 Invalid predictions count as wrong in all accuracy rates. Structures that InChI cannot represent (Markush drawings with `*`) are compared by canonical SMILES instead.
 
+## Results
+
+MolScribe on a **500-image seeded sample** (seed 42) of the BioVista OCSR task (8,860 labelled images), run on a Google Colab T4 GPU. Full outputs: [`results/images_default/`](results/images_default/) (`predictions.csv` has every prediction, confidence score and per-image metric).
+
+| Structure type | n | Valid SMILES | Exact match | Connectivity match | Stereo-only errors | Mean Tanimoto |
+|---|---|---|---|---|---|---|
+| Full | 175 | 93.7% | **73.7%** | 75.4% | 1.7% | 0.877 |
+| Chiral | 106 | 94.3% | **51.9%** | 63.2% | 11.3% | 0.867 |
+| Markush | 219 | 95.4% | **19.2%** | 20.1% | 0.9% | 0.587 |
+| **All** | **500** | **94.6%** | **45.2%** | **48.6%** | **3.4%** | **0.748** |
+
+**Comparison with published results.** The BioMiner authors report MolScribe accuracy on BioVista of 0.703 (full), 0.481 (chiral), 0.156 (Markush) and 0.455 overall (BioMiner repository). This benchmark's figures (0.737, 0.519, 0.192, 0.452) are within a few points on every category, which supports both the pipeline and the label-to-image matching.
+
+**Key findings**
+
+- **Ordinary structures are read well.** Nearly three in four full structures are reproduced exactly, and the median Tanimoto of valid predictions is 1.0.
+- **Stereochemistry is the main error on chiral molecules.** 11.3% of chiral images have the right skeleton but wrong stereo, and a further 22.6% are near misses (Tanimoto ≥ 0.85).
+- **Markush (R-group) drawings are the weak point.** Only 19.2% are exact; MolScribe often reads an "R" label as a carbon fragment instead of an attachment point. Since Markush structures make up 44% of this sample, they pull the overall score down sharply.
+- **Confidence is a useful error signal.** Correct predictions average 0.87 confidence versus 0.73 for wrong ones, so low-confidence outputs can be routed to human review.
+- **Most outputs are real compounds.** 74.7% of the 395 valid, InChI-representable predictions exist in PubChem (Markush outputs cannot be looked up by InChIKey).
+- **Speed:** 0.64 s per image on a T4 GPU, about 1.6 hours for the full 8,860-image set.
+
+**Reproduce:** open the Colab notebook, keep `LIMIT = None`, and *Run all* (about 10 minutes including PubChem checks).
+
 ## Reproducibility notes
 
 - **No hardcoded paths or credentials.** All paths come from the config and resolve from the repo root; the public APIs need no keys.

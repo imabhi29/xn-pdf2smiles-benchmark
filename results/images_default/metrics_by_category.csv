@@ -1,0 +1,5 @@
+category,n,validity_rate,exact_match_rate,connectivity_match_rate,stereo_only_error_rate,mean_tanimoto,mean_tanimoto_valid_only,median_tanimoto_valid_only,near_miss_rate,mean_seconds_per_image,mean_confidence_correct,mean_confidence_incorrect
+all,500,0.946,0.452,0.486,0.034,0.748,0.7907,1.0,0.09,0.642,0.8728,0.7306
+chiral,106,0.9434,0.5189,0.6321,0.1132,0.8671,0.9191,1.0,0.2264,0.9489,0.8422,0.7219
+full,175,0.9371,0.7371,0.7543,0.0171,0.8768,0.9356,1.0,0.0857,0.6892,0.8861,0.6785
+markush,219,0.9543,0.1918,0.2009,0.0091,0.5874,0.6155,0.5909,0.0274,0.4557,0.8719,0.7467

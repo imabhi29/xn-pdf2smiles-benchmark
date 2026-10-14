@@ -1,0 +1,19 @@
+09:16:07 INFO    xnbench 1.1.0 | run folder: /content/xn-pdf2smiles-benchmark/results/images_default
+09:16:10 WARNING Several image-name patterns match: {pdf_name}_image_molminer_bbox_{molminer_id_nop} (39%); {pdf_name}_image_molminer_bbox_{molminer_id_page}-{molminer_id_box0} (40%); {pdf_name}_image_molminer_bbox_{molminer_id_page}-{index} (100%). Using '{pdf_name}_image_molminer_bbox_{molminer_id_page}-{index}'. Check the label/image sanity cell before trusting results.
+09:16:11 WARNING 1 labels had no matching image and were skipped
+09:16:11 INFO    Labels: gd_SMIELS.csv | image key: '{pdf_name}_image_molminer_bbox_{molminer_id_page}-{index}' (100% matched) | SMILES column: 'smiles' | 8860 usable rows
+09:16:11 INFO    Benchmarking 500 images
+09:16:15 INFO    HTTP Request: HEAD https://huggingface.co/yujieq/MolScribe/resolve/main/swin_base_char_aux_1m.pth "HTTP/1.1 302 Found"
+09:16:18 INFO    MolScribe loaded on cuda
+09:16:55 INFO      50 / 500 images
+09:17:29 INFO      100 / 500 images
+09:18:00 INFO      150 / 500 images
+09:18:31 INFO      200 / 500 images
+09:18:59 INFO      250 / 500 images
+09:19:31 INFO      300 / 500 images
+09:20:01 INFO      350 / 500 images
+09:20:33 INFO      400 / 500 images
+09:21:06 INFO      450 / 500 images
+09:21:39 INFO      500 / 500 images
+09:21:40 INFO    Verifying 473 valid predictions against pubchem ...
+09:26:22 INFO    Done. Results in /content/xn-pdf2smiles-benchmark/results/images_default
