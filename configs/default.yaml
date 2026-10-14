@@ -1,0 +1,56 @@
+# ---------------------------------------------------------------------------
+# XN benchmark configuration
+# All relative paths are resolved from the repository root, so the same file
+# works on any machine. Override any value from the command line, e.g.
+#   python -m xnbench.run --mode images --limit 20
+# ---------------------------------------------------------------------------
+
+run_name: null          # null -> "<mode>_<timestamp>"
+mode: images            # images = BioVista OCSR benchmark | pdfs = full PDF pipeline
+seed: 42                # controls dataset sampling
+device: auto            # auto | cpu | cuda
+output_dir: results
+
+datasets:
+  # BioVista OCSR task: structure images with ground-truth SMILES
+  images:
+    root: data/biovista_ocsr
+    labels_file: null   # null -> auto-detect the CSV/JSON label file under root
+    image_col: null     # null -> auto-detect (image, file_name, path, ...)
+    smiles_col: null    # null -> auto-detect (smiles, SMILES, label, ...)
+    sample_size: 500    # null -> use every image (GPU recommended)
+
+  # Full PDF pipeline: folder of PDFs + optional ground-truth CSV
+  pdfs:
+    root: data/pdfs
+    truth_csv: data/ground_truth/pdf_truth.csv   # columns: pdf, smiles[, name]
+
+pdf:
+  dpi: 400              # page render resolution; higher helps small drawings
+  min_crop_px: 60       # ignore detections smaller than this (usually noise)
+  crop_padding: 20      # white border added around each crop
+  label_max_gap_pt: 40  # max distance (PDF points) from structure to its label
+
+recognition:
+  hf_repo: yujieq/MolScribe
+  checkpoint: swin_base_char_aux_1m.pth
+
+verification:
+  sources: [pubchem]    # any of: pubchem, chembl  ([] disables verification)
+  check_labels: true    # also resolve detected names -> InChIKey and compare
+  timeout_s: 15
+  sleep_s: 0.25         # pause between calls (PubChem allows <= 5 requests/s)
+  cache_file: results/cache/api_cache.json
+
+evaluation:
+  fingerprint_radius: 2     # Morgan radius (ECFP4 equivalent)
+  fingerprint_bits: 2048
+  near_miss_threshold: 0.85 # Tanimoto above this counts as a near miss
+
+downloads:
+  # BioVista OCSR set (Google Drive file id from the BioMiner README)
+  biovista_ocsr_gdrive_id: 11iCH0j7U9iFgwXahjkWZouNyqATfEPoL
+  # Open-access example papers shipped with the BioMiner repository
+  pdf_urls:
+    - https://raw.githubusercontent.com/jiaxianyan/BioMiner/main/example/pdfs/68_6r8r.pdf
+    - https://raw.githubusercontent.com/jiaxianyan/BioMiner/main/example/pdfs/40_6s8a.pdf

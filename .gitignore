@@ -1,0 +1,22 @@
+# Data and outputs are downloaded or generated, never committed
+data/*
+!data/README.md
+!data/ground_truth/
+data/ground_truth/*
+!data/ground_truth/pdf_truth_template.csv
+results/*
+!results/.gitkeep
+
+# Model weights
+*.pt
+*.pth
+*.ckpt
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+*.egg-info/
+.ipynb_checkpoints/
+.colab_setup_done

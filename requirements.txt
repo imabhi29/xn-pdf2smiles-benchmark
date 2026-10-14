@@ -1,0 +1,26 @@
+# Works on Google Colab (Python 3.12) and locally (Python 3.10-3.12).
+# Versions are lower bounds so pip reuses Colab's preinstalled torch/pandas
+# instead of downloading new ones. For a frozen record of a working setup:
+#   pip freeze > requirements-lock.txt
+
+# Core: PDF text layer, data handling, chemistry
+PyMuPDF>=1.23
+numpy>=1.23,<2.0          # MolScribe requires numpy < 2
+pandas>=1.5
+Pillow>=9.5
+rdkit>=2023.9.1
+pyyaml>=6.0
+requests>=2.31            # PubChem / ChEMBL web APIs
+gdown>=5.1                # BioVista download from Google Drive
+matplotlib>=3.7           # charts in the Colab notebook
+
+# Detection and cropping (uses TensorFlow; Colab already has it)
+decimer-segmentation>=1.4
+
+# Image -> SMILES
+torch>=1.11
+huggingface_hub>=0.20
+MolScribe @ git+https://github.com/thomas0809/MolScribe.git
+
+# Tests
+pytest>=7.4

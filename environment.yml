@@ -1,0 +1,8 @@
+name: xn-benchmark
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10   # 3.10-3.12 all work
+  - pip
+  - pip:
+      - -r requirements.txt
