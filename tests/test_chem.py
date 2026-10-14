@@ -33,3 +33,15 @@ def test_categories():
     assert structure_category("C[C@H](N)O") == "chiral"
     assert structure_category("*c1ccccc1") == "markush"
     assert structure_category("CCO") == "full"
+
+
+def test_markush_placeholders_are_normalised():
+    numbered, plain = validate_smiles("[1*]c1ccccc1"), validate_smiles("*c1ccccc1")
+    assert numbered.key == plain.key
+
+
+def test_markush_connectivity_ignores_stereo():
+    with_stereo = validate_smiles("*[C@H](N)C(=O)O")
+    without = validate_smiles("*C(N)C(=O)O")
+    assert with_stereo.key != without.key
+    assert with_stereo.connectivity_key == without.connectivity_key

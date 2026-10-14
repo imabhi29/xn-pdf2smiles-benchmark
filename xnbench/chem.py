@@ -4,7 +4,9 @@ Identity is compared with InChIKeys:
 * full key        -> same molecule including stereochemistry ("exact match")
 * first 14 chars  -> same atom connectivity, stereo ignored ("connectivity match")
 Molecules that InChI cannot represent (e.g. Markush structures with ``*``
-attachment points) fall back to canonical SMILES as their key.
+attachment points) fall back to canonical SMILES: isomeric SMILES for the
+exact key, non-isomeric SMILES for the connectivity key. Numbered R-group
+placeholders are normalised first, so "[1*]c1ccccc1" equals "*c1ccccc1".
 """
 from __future__ import annotations
 
@@ -51,16 +53,27 @@ def validate_smiles(smiles: str | None) -> ValidationResult:
         inchikey = Chem.MolToInchiKey(mol) or ""
     except Exception:
         inchikey = ""
+    generic, generic_flat = _generic_smiles(mol)
     return ValidationResult(
         valid=True,
         canonical_smiles=canonical,
         inchikey=inchikey,
-        key=inchikey or canonical,
-        connectivity_key=inchikey.split("-")[0] if inchikey else canonical,
+        key=inchikey or generic,
+        connectivity_key=inchikey.split("-")[0] if inchikey else generic_flat,
         formula=CalcMolFormula(mol),
         mol_weight=round(Descriptors.MolWt(mol), 3),
         heavy_atoms=mol.GetNumHeavyAtoms(),
     )
+
+
+def _generic_smiles(mol) -> tuple[str, str]:
+    """Canonical (isomeric, non-isomeric) SMILES with R-group labels removed."""
+    copy = Chem.Mol(mol)
+    for atom in copy.GetAtoms():
+        if atom.GetAtomicNum() == 0:      # dummy atom: *, [1*], [*:1], R-groups
+            atom.SetIsotope(0)
+            atom.SetAtomMapNum(0)
+    return Chem.MolToSmiles(copy), Chem.MolToSmiles(copy, isomericSmiles=False)
 
 
 @lru_cache(maxsize=8)
