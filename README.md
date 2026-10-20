@@ -23,8 +23,6 @@ The code measures how accurately chemical structures can be extracted from scien
 
 **`images` (main benchmark).** Runs MolScribe on the **BioVista OCSR task** (structure images with expert-curated SMILES; Yan et al., 2026) and scores every prediction against its label. This is fully automatic: the dataset downloads with one command.
 
-**`pdfs` (full pipeline).** Runs the complete PDF → SMILES pipeline on a folder of PDFs. If a ground-truth CSV is provided, it reports precision, recall and F1 per paper; otherwise it still extracts, validates and verifies.
-
 ## Repository map
 
 ```
