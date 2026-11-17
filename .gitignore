@@ -4,6 +4,8 @@ data/*
 !data/ground_truth/
 data/ground_truth/*
 !data/ground_truth/pdf_truth_template.csv
+!data/ground_truth/*_names.csv
+!data/ground_truth/*_smiles.csv
 results/*
 !results/.gitkeep
 

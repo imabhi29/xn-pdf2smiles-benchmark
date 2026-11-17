@@ -21,6 +21,17 @@ class DecimerDetector:
     """Detect and crop chemical structure depictions on a page image."""
 
     def __init__(self, expand: bool = True):
+        # TensorFlow normally reserves all GPU memory, which would leave none for
+        # MolScribe (PyTorch). Ask it to allocate only what it needs. This must
+        # happen before decimer_segmentation is imported, as that loads the model.
+        try:
+            import tensorflow as tf
+
+            for gpu in tf.config.list_physical_devices("GPU"):
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except Exception as exc:  # no TF GPU support, or already initialised
+            log.debug("TensorFlow memory growth not set: %s", exc)
+
         from decimer_segmentation import segment_chemical_structures
 
         self._segment = segment_chemical_structures

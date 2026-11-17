@@ -23,6 +23,8 @@ The code measures how accurately chemical structures can be extracted from scien
 
 **`images` (main benchmark).** Runs MolScribe on the **BioVista OCSR task** (structure images with expert-curated SMILES; Yan et al., 2026) and scores every prediction against its label. This is fully automatic: the dataset downloads with one command.
 
+**`pdfs` (full pipeline).** Runs the complete PDF → SMILES pipeline on a folder of PDFs and reports precision, recall and F1 per paper. Test PDFs: the two open-access BioMiner example papers (downloaded automatically) and, optionally, the open-access kinase paper by Binder et al. (2026). `scripts/build_pdf_truth.py` builds their ground truth automatically from BioVista labels and PubChem name lookups; see `data/README.md` to add your own papers.
+
 ## Repository map
 
 ```
@@ -36,6 +38,7 @@ xn-pdf2smiles-benchmark/
 ├── scripts/
 │   ├── download_data.py       # downloads BioVista OCSR data and example PDFs
 │   ├── inspect_dataset.py     # prints the downloaded data layout and label columns
+│   ├── build_pdf_truth.py     # builds PDF ground truth from BioVista labels + PubChem names
 │   ├── setup_colab.sh         # builds the Python 3.10 environment (Colab or any Linux VM)
 │   └── set_github_user.py     # fills your username into the Colab badge and clone URL
 ├── xnbench/                   # the benchmark package
@@ -96,7 +99,8 @@ python -m xnbench.run --mode images --limit 10 --run-name smoke_test
 # 4. Main benchmark (500-image seeded sample by default; set sample_size: null for all)
 python -m xnbench.run --mode images
 
-# 5. Full PDF pipeline (add data/ground_truth/pdf_truth.csv for precision/recall)
+# 5. Full PDF pipeline on the test PDFs, with automatic ground truth
+python scripts/build_pdf_truth.py
 python -m xnbench.run --mode pdfs
 ```
 

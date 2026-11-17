@@ -239,9 +239,15 @@ def main(argv=None):
                                          "e.g. a mounted Google Drive folder")
     ap.add_argument("--device", choices=["auto", "cpu", "cuda"])
     ap.add_argument("--no-verify", action="store_true", help="skip PubChem/ChEMBL lookups")
+    ap.add_argument("--pdf-dir", help="folder of PDFs for --mode pdfs (default: config)")
+    ap.add_argument("--truth-csv", help="ground-truth CSV for --mode pdfs (default: config)")
     args = ap.parse_args(argv)
 
     cfg = load_config(args.config)
+    if args.pdf_dir:
+        cfg["datasets"]["pdfs"]["root"] = args.pdf_dir
+    if args.truth_csv:
+        cfg["datasets"]["pdfs"]["truth_csv"] = args.truth_csv
     mode = args.mode or cfg.mode
     run_dir = make_run_dir(cfg, mode, args.run_name, args.output_dir)
     setup_logging(run_dir)
